@@ -1,8 +1,10 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
-import { JSDOM } from 'jsdom';
 import * as fs from 'fs';
+import { JSDOM } from 'jsdom';
 import * as path from 'path';
+import z from 'zod';
+import { ENV } from '..';
 
 dotenv.config();
 
@@ -19,8 +21,8 @@ export class SearchService {
   private readonly baseUrl = 'https://www.googleapis.com/customsearch/v1';
 
   constructor() {
-    this.apiKey = process.env.GOOGLE_API_KEY || '';
-    this.searchEngineId = process.env.GOOGLE_SEARCH_ENGINE_ID || '';
+    this.apiKey = ENV.GOOGLE_API_KEY;
+    this.searchEngineId = ENV.GOOGLE_SEARCH_ENGINE_ID;
   }
 
   public async fetchWebpageContent(url: string): Promise<string> {
@@ -111,7 +113,17 @@ export class SearchService {
     }
   }
 
-  async search(query: string, numResults: number = 3): Promise<GoogleSearchResult[]> {
+  async search(
+    query: string,
+    numResults: number = 10,
+  ): Promise<
+    | {
+        title: string;
+        link: string;
+        snippet: string;
+      }[]
+    | null
+  > {
     try {
       const response = await axios.get(this.baseUrl, {
         params: {
@@ -122,17 +134,39 @@ export class SearchService {
         },
       });
 
-      const items = response.data.items || [];
-      const results = items.map((item: { title: string; link: string; snippet: string }) => ({
-        title: item.title,
-        link: item.link,
-        snippet: item.snippet,
-      }));
+      const searchResultSchema = z.object({
+        kind: z.literal('customsearch#result'),
+        title: z.string(),
+        htmlTitle: z.string(),
+        link: z.string().url(),
+        displayLink: z.string(),
+        snippet: z.string(),
+        htmlSnippet: z.string(),
+        formattedUrl: z.string().url(),
+        htmlFormattedUrl: z.string(),
+        pagemap: z.object({
+          metatags: z.array(z.any()),
+          listitem: z.array(z.any()),
+        }),
+      });
 
-      return results;
+      const items = z.array(searchResultSchema).parse(response.data.items);
+
+      if (!items) return null;
+
+      console.log('Items length:', items.length);
+
+      return items.map((item) => {
+        return {
+          title: item.title,
+          link: item.link,
+          snippet: item.snippet,
+        };
+      });
     } catch (error) {
+      console.error(error);
       console.error('Error performing Google search:', error);
-      return [];
+      return null;
     }
   }
 }
