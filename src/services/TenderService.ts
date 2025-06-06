@@ -1,117 +1,13 @@
 import * as fs from 'fs';
 import { Tender } from '../models/Tender';
 import { GeminiService, TenderResponse } from './GeminiService';
-import { GoogleSearchService } from './GoogleService';
-import { formatTenderData, PROMPT } from '../constants/prompt';
+import { SearchService } from './SearchService';
+import { PROMPT } from '../constants/prompt';
 import path from 'path';
 
-interface AnalyzedFile {
-  analyzedFile: string;
-  response: string;
-}
-
 export class TenderAnalyticsService {
-  private geminiService: GeminiService;
-  googleSearch = new GoogleSearchService();
-
-  constructor() {
-    this.geminiService = new GeminiService();
-  }
-
-  // private async saveAnalysisToFile(
-  //   tender: any,
-  //   analyzedFiles: AnalyzedFile[],
-  //   finalAnalysis: string,
-  // ) {
-  //   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  //   const fileName = path.join(this.outputDir, `tender_${tender.regNumber}_${timestamp}.txt`);
-
-  //   let content = `Tender Analysis Report\n`;
-  //   content += `===================\n\n`;
-  //   content += `Tender Registration Number: ${tender.regNumber}\n`;
-  //   content += `Analysis Date: ${new Date().toISOString()}\n\n`;
-  //   content += `Individual File Analysis\n`;
-  //   content += `=====================\n\n`;
-
-  //   for (const file of analyzedFiles) {
-  //     content += `File: ${file.analyzedFile}\n`;
-  //     content += `Analysis:\n${file.response}\n`;
-  //     content += `-------------------\n\n`;
-  //   }
-
-  //   content += `Final Analysis\n`;
-  //   content += `=============\n\n`;
-  //   content += finalAnalysis;
-
-  //   await fs.promises.writeFile(fileName, content, 'utf8');
-  //   console.log(`Analysis saved to file: ${fileName}`);
-  //   return fileName;
-  // }
-
-  public async analyzeTender(
-    regNumber: string,
-    pathFiles: string[],
-  ): Promise<TenderResponse | null> {
-    try {
-      const analyzedFiles: AnalyzedFile[] = [];
-
-      for (const pathFile of pathFiles) {
-        console.log('Processing file:', pathFile);
-        const response = await this.geminiService.generateResponse(pathFile);
-        if (!response) {
-          console.error('No response found for file:', pathFile);
-          return null;
-        }
-        analyzedFiles.push({
-          analyzedFile: pathFile,
-          response,
-        });
-        console.log('Finished processing file:', pathFile);
-      }
-
-      const combinedText = analyzedFiles
-        .map((file) => {
-          return `File: ${file.analyzedFile}\n\nAnalysis:\n${file.response}\n\n---\n\n`;
-        })
-        .join('');
-
-      await Tender.findOneAndUpdate(
-        { regNumber },
-        {
-          $set: {
-            analyzedFiles,
-          },
-        },
-        { new: true },
-      );
-
-      console.log('Processing tender:', regNumber);
-
-      const finalAnalysis = await this.geminiService.generateResponseFromText(combinedText);
-
-      if (!finalAnalysis) {
-        console.error('No final analysis found for tender:', regNumber);
-        return null;
-      }
-
-      console.log('Tender Files Analysis Finished for:', regNumber);
-
-      await Tender.findOneAndUpdate(
-        { regNumber },
-        {
-          $set: {
-            claudeResponse: finalAnalysis,
-          },
-        },
-        { new: true },
-      );
-
-      return finalAnalysis;
-    } catch (err) {
-      console.error('Error in [analyzeTender]:', err);
-      return null;
-    }
-  }
+  private geminiService = new GeminiService();
+  private searchService = new SearchService();
 
   public async analyzeItems(regNumber: string, tender: TenderResponse) {
     const itemPromises = tender.items.map(async (item, i: number) => {
@@ -152,7 +48,7 @@ export class TenderAnalyticsService {
 
       const searchPromises = findRequest.map(async (request) => {
         console.log('Searching for:', request);
-        const results = await this.googleSearch.search(request);
+        const results = await this.searchService.search(request);
         console.log(`Searching finished for: ${request}`);
 
         const websitePromises = results.map(async (result) => {
@@ -161,7 +57,7 @@ export class TenderAnalyticsService {
           const outputPath = `${randomUID}.html`;
 
           console.log('Downloading HTML for:', link);
-          const path = await this.googleSearch.downloadHtml(link, outputPath);
+          const path = await this.searchService.downloadHtml(link, outputPath);
 
           if (!path) {
             console.error('HTML was not downloaded for:', link);
@@ -234,31 +130,31 @@ export class TenderAnalyticsService {
     return results;
   }
 
-  public async generateFinalReport(regNumber: string): Promise<string | null> {
-    try {
-      const tender = await Tender.findOne({ regNumber });
+  // public async generateFinalReport(regNumber: string): Promise<string | null> {
+  //   try {
+  //     const tender = await Tender.findOne({ regNumber });
 
-      if (!tender) {
-        console.error('[generateFinalReport] Тендер не найден');
-        return null;
-      }
+  //     if (!tender) {
+  //       console.error('[generateFinalReport] Тендер не найден');
+  //       return null;
+  //     }
 
-      const text = formatTenderData(tender);
+  //     const text = formatTenderData(tender);
 
-      console.log('Генерация финального отчета для тендера:', regNumber);
-      const answer = await this.geminiService.generateFinalRequest(text);
+  //     console.log('Генерация финального отчета для тендера:', regNumber);
+  //     const answer = await this.geminiService.generateFinalRequest(text);
 
-      if (!answer) {
-        console.error('[generateFinalReport] Не удалось получить ответ от ИИ');
-        return null;
-      }
+  //     if (!answer) {
+  //       console.error('[generateFinalReport] Не удалось получить ответ от ИИ');
+  //       return null;
+  //     }
 
-      await Tender.findOneAndUpdate({ regNumber }, { isProcessed: true, finalReport: answer });
+  //     await Tender.findOneAndUpdate({ regNumber }, { isProcessed: true, finalReport: answer });
 
-      return answer;
-    } catch (err) {
-      console.error('[generateFinalReport] Ошибка при генерации отчета:', err);
-      return null;
-    }
-  }
+  //     return answer;
+  //   } catch (err) {
+  //     console.error('[generateFinalReport] Ошибка при генерации отчета:', err);
+  //     return null;
+  //   }
+  // }
 }

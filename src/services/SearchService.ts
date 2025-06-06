@@ -13,7 +13,7 @@ interface GoogleSearchResult {
   content?: string;
 }
 
-export class GoogleSearchService {
+export class SearchService {
   private readonly apiKey: string;
   private readonly searchEngineId: string;
   private readonly baseUrl = 'https://www.googleapis.com/customsearch/v1';

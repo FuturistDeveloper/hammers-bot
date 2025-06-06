@@ -1,7 +1,6 @@
 import { Telegraf, Markup } from 'telegraf';
-import { ENV, getAnalyticsForTenders } from '../index';
+import { ENV } from '../index';
 import { User } from '../models/User';
-import { measureExecutionTime } from '../utils/timing';
 
 export class BotService {
   private bot: Telegraf;
@@ -44,30 +43,30 @@ export class BotService {
       );
     });
 
-    this.bot.command('tender', async (ctx) => {
-      const regNumber = ctx.message.text.split(' ')[1];
+    // this.bot.command('tender', async (ctx) => {
+    //   const regNumber = ctx.message.text.split(' ')[1];
 
-      if (Number.isNaN(Number(regNumber))) {
-        ctx.reply('Пожалуйста, введите номер тендера в формате: /tender 32514850391');
-        return;
-      }
+    //   if (Number.isNaN(Number(regNumber))) {
+    //     ctx.reply('Пожалуйста, введите номер тендера в формате: /tender 32514850391');
+    //     return;
+    //   }
 
-      const result = await measureExecutionTime(
-        () => getAnalyticsForTenders(regNumber, ctx),
-        `Analyzing tender ${regNumber}`,
-      );
-      ctx.reply(result);
-    });
+    //   const result = await measureExecutionTime(
+    //     () => getAnalyticsForTenders(regNumber, ctx),
+    //     `Analyzing tender ${regNumber}`,
+    //   );
+    //   ctx.reply(result);
+    // });
 
     // Add callback query handler for the tender button
-    this.bot.action(/^tender (.+)$/, async (ctx) => {
-      const regNumber = ctx.match[1];
-      const result = await measureExecutionTime(
-        () => getAnalyticsForTenders(regNumber, ctx),
-        `Analyzing tender ${regNumber}`,
-      );
-      ctx.reply(result);
-    });
+    // this.bot.action(/^tender (.+)$/, async (ctx) => {
+    //   const regNumber = ctx.match[1];
+    //   const result = await measureExecutionTime(
+    //     () => getAnalyticsForTenders(regNumber, ctx),
+    //     `Analyzing tender ${regNumber}`,
+    //   );
+    //   ctx.reply(result);
+    // });
   }
 
   private setupErrorHandling(): void {
