@@ -5,9 +5,8 @@ const envSchema = z.object({
   BOT_LINK: z.string().optional(),
   BOT_TOKEN: z.string(),
   MONGO_URI: z.string(),
-  CLAUDE_API_KEY: z.string(),
-  OPENAI_API_KEY: z.string(),
-  TENDERLAND_API_KEY: z.string(),
+  GOOGLE_API_KEY: z.string(),
+  GOOGLE_SEARCH_ENGINE_ID: z.string(),
   GEMINI_API_KEY: z.string(),
 });
 
@@ -20,17 +19,9 @@ function maskSensitiveValue(value: string): string {
 
 export function validateEnv(): Env {
   const missingVars: string[] = [];
-  
+
   // Check required environment variables
-  const requiredVars = [
-    'PORT',
-    'BOT_TOKEN',
-    'MONGO_URI',
-    'CLAUDE_API_KEY',
-    'OPENAI_API_KEY',
-    'TENDERLAND_API_KEY',
-    'GEMINI_API_KEY'
-  ];
+  const requiredVars = ['PORT', 'BOT_TOKEN', 'MONGO_URI', 'GEMINI_API_KEY'];
 
   for (const varName of requiredVars) {
     if (!process.env[varName]) {
@@ -40,7 +31,7 @@ export function validateEnv(): Env {
 
   if (missingVars.length > 0) {
     console.error('❌ Missing required environment variables:');
-    missingVars.forEach(varName => {
+    missingVars.forEach((varName) => {
       console.error(`   - ${varName}`);
     });
     console.error('\nPlease add these variables to your .env file');
@@ -49,14 +40,15 @@ export function validateEnv(): Env {
 
   try {
     const env = envSchema.parse(process.env);
-    
+
     // Log success message with masked values
     console.log('\n✅ Environment variables validated successfully:');
     console.log('   Environment configuration:');
     Object.entries(env).forEach(([key, value]) => {
-      const maskedValue = key.includes('API_KEY') || key.includes('TOKEN') || key.includes('URI')
-        ? maskSensitiveValue(String(value))
-        : value;
+      const maskedValue =
+        key.includes('API_KEY') || key.includes('TOKEN') || key.includes('URI')
+          ? maskSensitiveValue(String(value))
+          : value;
       console.log(`   - ${key}: ${maskedValue}`);
     });
     console.log('\n');
@@ -65,7 +57,7 @@ export function validateEnv(): Env {
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error('❌ Environment validation failed:');
-      error.errors.forEach(err => {
+      error.errors.forEach((err) => {
         console.error(`   - ${err.path.join('.')}: ${err.message}`);
       });
     } else {
@@ -73,4 +65,4 @@ export function validateEnv(): Env {
     }
     process.exit(1);
   }
-} 
+}

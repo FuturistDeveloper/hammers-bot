@@ -32,11 +32,6 @@ export const logConfig = (config: Config) => {
 
   const configContent = `
 Environment: ${environmentColor(config.environment)}
-Cron Schedule: ${chalk.cyan(config.cronSchedule)}
-
-${chalk.bold('Tenderland Settings:')}
-  • Autosearch ID: ${chalk.cyan(config.tenderland.autosearchId)}
-  • Limit: ${chalk.cyan(config.tenderland.limit)}
 `;
 
   logBox('Configuration', configContent);
