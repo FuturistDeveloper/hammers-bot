@@ -74,7 +74,9 @@ app.get('/api', (req, res) => {
 app.get('/api/test/gemini', async (req, res) => {
   try {
     const gemini = new GeminiService();
-    const response = await gemini.generateResponseFromText('whats the weather in moscow');
+    const response = await gemini.generateResponse(
+      'https://tender.gov.ru/tender/32514850391',
+    );
     return res.send(response);
   } catch (error) {
     console.error('Error in test job:', error);

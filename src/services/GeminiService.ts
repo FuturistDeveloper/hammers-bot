@@ -2,7 +2,7 @@ import { createPartFromUri, GoogleGenAI } from '@google/genai';
 import path from 'path';
 import { PROMPT } from '../constants/prompt';
 import { ENV } from '../index';
-import parseResponse from '../utils/parsing';
+// import parseResponse from '../utils/parsing';
 
 export interface TenderResponse {
   tender: {
@@ -123,15 +123,15 @@ export class GeminiService {
     }
   }
 
-  public async generateResponseFromText(text: string): Promise<TenderResponse | null> {
+  public async generateResponseFromText(text: string): Promise<string | null> {
     try {
       const response = await this.ai.models.generateContent({
         model: 'gemini-2.5-pro-preview-05-06',
         contents: [PROMPT.geminiAnalysis + '\n\n' + text],
       });
       if (!response.text) return null;
-      const parsedResponse = parseResponse(response.text || '');
-      return parsedResponse;
+      // const parsedResponse = parseResponse(response.text || '');
+      return response.text;
     } catch (error) {
       console.error('Error generating response from text:', error);
       return null;
