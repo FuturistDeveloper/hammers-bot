@@ -1,5 +1,5 @@
-import { Telegraf, Markup } from 'telegraf';
-import { ENV } from '../index';
+import { Markup, Telegraf } from 'telegraf';
+import { ENV, generateResponse } from '../index';
 import { User } from '../models/User';
 
 export class BotService {
@@ -43,36 +43,18 @@ export class BotService {
       );
     });
 
-    // this.bot.command('tender', async (ctx) => {
-    //   const regNumber = ctx.message.text.split(' ')[1];
-
-    //   if (Number.isNaN(Number(regNumber))) {
-    //     ctx.reply('Пожалуйста, введите номер тендера в формате: /tender 32514850391');
-    //     return;
-    //   }
-
-    //   const result = await measureExecutionTime(
-    //     () => getAnalyticsForTenders(regNumber, ctx),
-    //     `Analyzing tender ${regNumber}`,
-    //   );
-    //   ctx.reply(result);
-    // });
-
-    // Add callback query handler for the tender button
-    // this.bot.action(/^tender (.+)$/, async (ctx) => {
-    //   const regNumber = ctx.match[1];
-    //   const result = await measureExecutionTime(
-    //     () => getAnalyticsForTenders(regNumber, ctx),
-    //     `Analyzing tender ${regNumber}`,
-    //   );
-    //   ctx.reply(result);
-    // });
+    this.bot.command('tender', async (ctx) => {
+      const text = ctx.message.text.split('/tender')[1];
+      console.log('Text to generate response:', text);
+      ctx.reply('Пожалуйста, подождите...');
+      const response = await generateResponse(text, ctx);
+    });
   }
 
   private setupErrorHandling(): void {
     this.bot.catch((err, ctx) => {
       console.error(`Error for ${ctx.updateType}:`, err);
-      // ctx.reply('An error occurred while processing your request.');
+      ctx.reply('An error occurred while processing your request.');
     });
   }
 
