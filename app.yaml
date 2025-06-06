@@ -1,0 +1,32 @@
+name: Deploy on Digital Ocean
+services:
+- name: web
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: FuturistDeveloper/tenderland-bot
+  package_install:
+    apt:
+      - libxkbcommon0
+      - libxkbcommon-x11-0
+      - libxcb-icccm4
+      - libxcb-image0
+      - libxcb-keysyms1
+      - libxcb-render-util0
+      - libxcb-xinerama0
+      - libxcb-xinput0
+      - libxcb-xfixes0
+      - libgbm1
+      - libasound2
+      - libatk1.0-0
+      - libatk-bridge2.0-0
+      - libcups2
+      - libdrm2
+      - libgtk-3-0
+      - libnspr4
+      - libnss3
+      - libpango-1.0-0
+      - libxcomposite1
+      - libxdamage1
+      - libxrandr2
+      - libxshmfence1
